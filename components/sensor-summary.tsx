@@ -28,33 +28,55 @@ export function SensorSummary({ sensors }: SensorSummaryProps) {
     setSummary(counts as typeof summary);
   }, [sensors]);
 
+  const total = sensors.length;
   const statuses = [
-    { label: 'Operational', value: summary.operational, color: 'bg-status-operational' },
-    { label: 'Warning', value: summary.warning, color: 'bg-status-warning' },
-    { label: 'Critical', value: summary.critical, color: 'bg-status-critical' },
-    { label: 'Offline', value: summary.offline, color: 'bg-status-offline' },
+    { label: 'Operational', value: summary.operational, color: '#22c55e', pct: total > 0 ? (summary.operational / total) * 100 : 0 },
+    { label: 'Warning', value: summary.warning, color: '#f59e0b', pct: total > 0 ? (summary.warning / total) * 100 : 0 },
+    { label: 'Critical', value: summary.critical, color: '#f43f5e', pct: total > 0 ? (summary.critical / total) * 100 : 0 },
+    { label: 'Offline', value: summary.offline, color: '#6b7280', pct: total > 0 ? (summary.offline / total) * 100 : 0 },
   ];
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">System Status</CardTitle>
-        <CardDescription>Sensor distribution by status</CardDescription>
+    <Card className="border-white/[0.06] bg-[#080c1a]/60 backdrop-blur-xl overflow-hidden">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm font-bold tracking-tight">System Status</CardTitle>
+        <CardDescription className="text-xs text-white/30">Sensor distribution by status</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3">
+        {/* Visual distribution bar */}
+        <div className="flex h-2 rounded-full overflow-hidden mb-4 bg-white/[0.04]">
           {statuses.map((status) => (
-            <div key={status.label} className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className={`w-3 h-3 rounded-full ${status.color}`}></div>
-                <span className="text-sm">{status.label}</span>
+            <div
+              key={status.label}
+              className="transition-all duration-700 ease-out first:rounded-l-full last:rounded-r-full"
+              style={{
+                width: `${status.pct}%`,
+                backgroundColor: status.color,
+                boxShadow: `0 0 8px ${status.color}40`,
+              }}
+            />
+          ))}
+        </div>
+
+        <div className="space-y-2">
+          {statuses.map((status) => (
+            <div key={status.label} className="flex items-center justify-between p-1.5 rounded-lg hover:bg-white/[0.02] transition-colors">
+              <div className="flex items-center gap-2.5">
+                <div
+                  className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: status.color, boxShadow: `0 0 6px ${status.color}40` }}
+                />
+                <span className="text-xs text-white/60 font-medium">{status.label}</span>
               </div>
-              <span className="font-semibold text-sm">{status.value}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-white/25 tabular-nums">{status.pct.toFixed(0)}%</span>
+                <span className="font-black text-xs text-white/70 tabular-nums w-5 text-right">{status.value}</span>
+              </div>
             </div>
           ))}
-          <div className="border-t border-border pt-3 flex items-center justify-between font-semibold">
-            <span className="text-sm">Total</span>
-            <span>{sensors.length}</span>
+          <div className="border-t border-white/[0.04] pt-2.5 mt-2 flex items-center justify-between">
+            <span className="text-xs font-bold text-white/50">Total</span>
+            <span className="font-black text-sm text-white/80 tabular-nums">{sensors.length}</span>
           </div>
         </div>
       </CardContent>

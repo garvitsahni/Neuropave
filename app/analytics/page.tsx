@@ -1,13 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { Sensor } from '@/lib/mock-data';
+import { AppSidebar } from '@/components/app-sidebar';
+import { TopBar } from '@/components/top-bar';
 import { SensorAnalytics } from '@/components/sensor-analytics';
-import { Button } from '@/components/ui/button';
-import { ChevronLeft } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { BarChart3, Activity, Gauge, TrendingUp } from 'lucide-react';
 
 export default function AnalyticsPage() {
   const [sensors, setSensors] = useState<Sensor[]>([]);
@@ -19,165 +19,91 @@ export default function AnalyticsPage() {
       try {
         const response = await fetch('/api/sensors');
         const data = await response.json();
-        setSensors(
-          data.data.map((s: any) => ({
-            ...s,
-            lastUpdate: new Date(s.lastUpdate),
-          }))
-        );
-      } catch (error) {
-        console.error('Failed to fetch sensors:', error);
-      } finally {
-        setLoading(false);
-      }
+        setSensors(data.data.map((s: any) => ({ ...s, lastUpdate: new Date(s.lastUpdate) })));
+      } catch (error) { console.error('Failed to fetch sensors:', error); }
+      finally { setLoading(false); }
     };
-
     fetchSensors();
-    const interval = setInterval(fetchSensors, 30000); // Refresh every 30 seconds
+    const interval = setInterval(fetchSensors, 30000);
     return () => clearInterval(interval);
   }, []);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <Spinner />
-          <p className="text-muted-foreground">Loading analytics...</p>
-        </div>
-      </div>
-    );
-  }
-
   const getFilteredSensors = () => {
     switch (activeTab) {
-      case 'vibration':
-      case 'strain':
-      case 'temperature':
-      case 'humidity':
+      case 'vibration': case 'strain': case 'temperature': case 'humidity':
         return sensors.filter((s) => s.type === activeTab);
-      default:
-        return sensors;
+      default: return sensors;
     }
   };
-
   const filteredSensors = getFilteredSensors();
   const sensorTypes = ['vibration', 'strain', 'temperature', 'humidity'] as const;
+  const typeColors: Record<string, string> = { vibration: '#3b82f6', strain: '#22c55e', temperature: '#f59e0b', humidity: '#8b5cf6' };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card">
-        <div className="px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/">
-              <Button variant="ghost" size="sm">
-                <ChevronLeft className="w-4 h-4 mr-1" />
-                Back to Dashboard
-              </Button>
-            </Link>
+    <div className="flex min-h-screen bg-[#050505]">
+      <AppSidebar />
+      <div className="flex-1 ml-[var(--app-sidebar-width)] transition-[margin] duration-300 ease-in-out flex flex-col min-h-screen">
+        <TopBar />
+        <main className="flex-1 p-6 space-y-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+              <BarChart3 className="w-5 h-5 text-emerald-400" />
+            </div>
             <div>
-              <h1 className="text-2xl font-bold">Analytics & Insights</h1>
-              <p className="text-sm text-muted-foreground">Historical data and sensor trends</p>
+              <h1 className="text-xl font-extrabold text-white/90 tracking-tight">Road Intelligence</h1>
+              <p className="text-xs text-white/30">Historical data, trends, and AI-powered insights</p>
             </div>
           </div>
-        </div>
-      </header>
 
-      {/* Main Content */}
-      <div className="px-6 py-6 space-y-6">
-        {/* Stats Overview */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-card border border-border rounded-lg p-4">
-            <p className="text-xs text-muted-foreground mb-2">Total Sensors</p>
-            <p className="text-3xl font-bold">{sensors.length}</p>
-          </div>
-          <div className="bg-card border border-border rounded-lg p-4">
-            <p className="text-xs text-muted-foreground mb-2">Active Sensors</p>
-            <p className="text-3xl font-bold text-status-operational">
-              {sensors.filter((s) => s.status !== 'offline').length}
-            </p>
-          </div>
-          <div className="bg-card border border-border rounded-lg p-4">
-            <p className="text-xs text-muted-foreground mb-2">Warning/Critical</p>
-            <p className="text-3xl font-bold text-status-warning">
-              {sensors.filter((s) => s.status === 'warning' || s.status === 'critical').length}
-            </p>
-          </div>
-          <div className="bg-card border border-border rounded-lg p-4">
-            <p className="text-xs text-muted-foreground mb-2">Offline Sensors</p>
-            <p className="text-3xl font-bold text-status-offline">
-              {sensors.filter((s) => s.status === 'offline').length}
-            </p>
-          </div>
-        </div>
-
-        {/* Sensor Type Filter */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="all">All Sensors ({sensors.length})</TabsTrigger>
-            {sensorTypes.map((type) => (
-              <TabsTrigger key={type} value={type}>
-                {type.charAt(0).toUpperCase() + type.slice(1)} (
-                {sensors.filter((s) => s.type === type).length})
-              </TabsTrigger>
-            ))}
-          </TabsList>
-
-          <TabsContent value={activeTab} className="mt-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {filteredSensors.map((sensor) => (
-                <SensorAnalytics key={sensor.id} sensor={sensor} />
-              ))}
-            </div>
-            {filteredSensors.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">No sensors found in this category</p>
+          {loading ? (
+            <div className="flex items-center justify-center h-96"><Spinner /></div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 stagger-children">
+                {[
+                  { label: 'Total Sensors', value: sensors.length, color: '#6366f1', icon: <Activity className="w-4 h-4" /> },
+                  { label: 'Active', value: sensors.filter((s) => s.status !== 'offline').length, color: '#22c55e', icon: <Gauge className="w-4 h-4" /> },
+                  { label: 'Anomalies', value: sensors.filter((s) => s.status === 'warning' || s.status === 'critical').length, color: '#f59e0b', icon: <TrendingUp className="w-4 h-4" /> },
+                  { label: 'Offline', value: sensors.filter((s) => s.status === 'offline').length, color: '#6b7280', icon: <Activity className="w-4 h-4" /> },
+                ].map(({ label, value, color, icon }) => (
+                  <div key={label} className="p-5 rounded-2xl bg-white/[0.03] border border-white/[0.06]">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="p-1.5 rounded-lg" style={{ backgroundColor: color + '12', color }}>{icon}</div>
+                      <p className="text-[9px] uppercase tracking-[0.15em] text-white/25 font-bold">{label}</p>
+                    </div>
+                    <p className="text-3xl font-extrabold tabular-nums" style={{ color }}>{value}</p>
+                  </div>
+                ))}
               </div>
-            )}
-          </TabsContent>
-        </Tabs>
 
-        {/* Insights */}
-        <div className="bg-card border border-border rounded-lg p-6">
-          <h2 className="text-lg font-semibold mb-4">System Insights</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="border-l-4 border-status-operational pl-4">
-              <p className="text-sm font-semibold">System Health</p>
-              <p className="text-2xl font-bold text-status-operational mt-1">98.5%</p>
-              <p className="text-xs text-muted-foreground mt-1">Overall system operational status</p>
-            </div>
-            <div className="border-l-4 border-status-warning pl-4">
-              <p className="text-sm font-semibold">Uptime Today</p>
-              <p className="text-2xl font-bold text-status-warning mt-1">99.8%</p>
-              <p className="text-xs text-muted-foreground mt-1">24-hour rolling availability</p>
-            </div>
-            <div className="border-l-4 border-primary pl-4">
-              <p className="text-sm font-semibold">Data Quality</p>
-              <p className="text-2xl font-bold text-primary mt-1">98.2%</p>
-              <p className="text-xs text-muted-foreground mt-1">Sensor reading accuracy rate</p>
-            </div>
-          </div>
-
-          {/* Trend Analysis */}
-          <div className="mt-6 pt-6 border-t border-border">
-            <p className="text-sm font-semibold mb-3">Trending Alerts</p>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm p-2 bg-background rounded">
-                <span>Vibration anomalies increasing</span>
-                <span className="text-status-warning font-semibold">+12% this hour</span>
-              </div>
-              <div className="flex items-center justify-between text-sm p-2 bg-background rounded">
-                <span>Temperature readings stable</span>
-                <span className="text-status-operational font-semibold">Stable</span>
-              </div>
-              <div className="flex items-center justify-between text-sm p-2 bg-background rounded">
-                <span>Humidity variation widening</span>
-                <span className="text-status-warning font-semibold">+5% this hour</span>
-              </div>
-            </div>
-          </div>
-        </div>
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="flex w-fit gap-1 p-1 bg-white/[0.03] border border-white/[0.06] rounded-2xl">
+                  <TabsTrigger value="all" className="rounded-xl text-xs font-bold px-4 data-[state=active]:bg-white/[0.08]">All ({sensors.length})</TabsTrigger>
+                  {sensorTypes.map((type) => (
+                    <TabsTrigger key={type} value={type} className="rounded-xl text-xs font-bold px-4 data-[state=active]:bg-white/[0.08]">
+                      <span className="w-1.5 h-1.5 rounded-full mr-1.5" style={{ backgroundColor: typeColors[type] }} />
+                      {type.charAt(0).toUpperCase() + type.slice(1)} ({sensors.filter((s) => s.type === type).length})
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+                <TabsContent value={activeTab} className="mt-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {filteredSensors.map((sensor) => (
+                      <SensorAnalytics key={sensor.id} sensor={sensor} />
+                    ))}
+                  </div>
+                  {filteredSensors.length === 0 && (
+                    <div className="text-center py-16 bg-white/[0.02] border border-dashed border-white/[0.06] rounded-2xl">
+                      <p className="text-white/25 text-sm">No sensors in this category</p>
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
+            </>
+          )}
+        </main>
       </div>
     </div>
   );
 }
+

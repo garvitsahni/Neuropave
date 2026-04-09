@@ -1,15 +1,18 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
-  title: 'NeuroPave - Infrastructure Monitoring',
-  description: 'Real-time pavement health monitoring and predictive analytics dashboard',
-  generator: 'v0.app',
+  title: 'NeuroPave — AI Road Health Intelligence',
+  description: 'Predicting infrastructure failures before they happen. Smart city AI-powered pavement health monitoring and predictive analytics platform.',
+  generator: 'NeuroPave AI',
   icons: {
     icon: [
       {
@@ -35,8 +38,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="dark">
-      <body className="font-sans antialiased">
+    <html lang="en" className={`dark ${inter.variable}`} suppressHydrationWarning>
+      <body className="font-sans antialiased" suppressHydrationWarning>
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
